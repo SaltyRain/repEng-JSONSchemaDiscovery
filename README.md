@@ -42,6 +42,20 @@ Next, execute the following command:
 
 This script performs an initial smoke test to ensure the environment is set up correctly. It then runs a Python script that creates a user for API interaction, extracts data from .tar files, and inserts them into the database. Finally, it extracts the JSON schema, compares the reproduced results with the original paper's data, and generates a paper.pdf file containing the report of this reproduction package.
 
+### Issue: Error Code 504 during Raw Schema Extraction
+
+During the execution of the project, you might encounter the following error:
+
+`Error Code: 504
+Error occurred while trying to proxy: localhost:4200/api/batch/rawschema/steps/all`
+
+
+This error indicates a timeout issue typically related to the server-side processing taking longer than expected. If you see this error, particularly during raw schema extraction for any dataset (e.g., drugs, companies, movies), please follow the steps below:
+
+- Ensure that your server and all services are running correctly.
+- Check if there is any network issue or server overload that might be causing the delay.
+- Retry the operation by running the `./doAll.sh` script again. Often, re-initiating the process resolves the issue.
+
 ## Copy and View the Resulting Paper
 
 To copy the directory with the resulting paper, run the following command in another terminal from the folder where you want to save the results:
