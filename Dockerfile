@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
 # Start off of a long-term maintained base distribution
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 LABEL org.opencontainers.image.authors="garipo01@ads.uni-passau.de"
 
@@ -15,71 +15,67 @@ ENV LC_ALL="C.UTF-8"
 
 # Update system and install necessary tools
 RUN apt update && apt install -y --no-install-recommends \
+    nano \
     ca-certificates \
     curl \
     git \
+    sudo \
     build-essential \
-    # Add Python for running your script
+    # Add Python for running scripts
     python3 \
     python3-pip \
     # Add LaTeX packages
-    texlive \
-    texlive-latex-extra \
+    texlive-base \
     texlive-bibtex-extra \
+    texlive-fonts-extra \
     texlive-fonts-recommended \
-    texlive-science \
-	texlive-plain-generic \
-	texlive-publishers \
-    texlive-fonts-extra \ 
-    biber \
-    # Install individual LaTeX packages
-    # might be needed for libertine
-    fonts-lmodern \ 
-    # might be needed for libertine
-    lmodern \
-    # Additional packages for general LaTeX functionality
-    texlive-latex-recommended \
-    texlive-xetex \
-    texlive-luatex \
-    texlive-pictures \
-    texlive-lang-english \
-    texlive-lang-german
+    texlive-plain-generic \
+    texlive-latex-extra \
+    texlive-publishers
 
 # Install Node.js 16.x
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \
     apt-get install -y nodejs
 
-RUN useradd -m -G sudo -s /bin/bash repro && echo "repro:repro" | chpasswd
-USER repro
+RUN useradd -m -G sudo -s /bin/bash repro \
+        && echo "repro:repro" | chpasswd \
+        && usermod -a -G staff repro
+
 WORKDIR /home/repro
 
-# Prepare directory structure
-## git-repos/       - for external git repositories
-## build/           - temporary directory for out-of-tree builds
-## bin/             - for generated binary executables
-RUN mkdir -p $HOME/git-repos $HOME/build $HOME/bin
-
-
-# Obtain JSONSchemaDiscovery sources from a git repo
-WORKDIR /home/repro/git-repos
+# Clone the JSONSchemaDiscovery repository
 RUN git clone https://github.com/feekosta/JSONSchemaDiscovery.git
 
-# Apply the patch to angular.json
-COPY patches/mypatch.patch /tmp
+# Change to the JSONSchemaDiscovery directory
+WORKDIR /home/repro/JSONSchemaDiscovery
 
-WORKDIR /home/repro/git-repos/JSONSchemaDiscovery
-RUN patch angular.json < /tmp/mypatch.patch
+# Copy patches and all necessary files
+COPY --chown=repro:repro ./patches patches
+COPY --chown=repro:repro ./scripts scripts
+COPY --chown=repro:repro ./csv csv
+COPY --chown=repro:repro ./doAll.sh .
+COPY --chown=repro:repro ./Makefile .
 
+# Apply patches
+RUN patch angular.json < patches/angular.patch
+
+#install global dependencies
+RUN npm install -g @angular/cli@13.3.11 && \
+    npm install -g typescript@4.6.3
 
 # Install project dependencies and build the project
 RUN npm install
-RUN npm run build
 
-#  Production distribution is now in the dist/ subdirectory
+## Clone the associated paper  
+RUN git clone https://github.com/SaltyRain/rep-eng-paper.git
 
-WORKDIR /home/repro
-COPY scripts/smoke.sh .
+# Clone datasets for the experiment
+RUN git clone https://github.com/feekosta/datasets.git
 
-## Clone the associated paper source so contributors can work on it from within the container 
+# Install Python dependencies
+RUN pip3 install pymongo python-dotenv requests
 
-RUN git clone https://github.com/SaltyRain/rep-eng-paper.git paper
+# make doAll.sh script executable
+RUN chmod +x doAll.sh
+
+EXPOSE 4200

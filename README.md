@@ -1,44 +1,51 @@
+
 # Replication Package for "An Approach for Schema Extraction of JSON and Extended JSON Document Collections" @ IEEE 2018
 
-This repository provides the replication package for the ICEE 2018
-*An Approach for Schema Extraction of JSON and Extended JSON Document Collections*. 
+This repository provides the replication package for the IEEE 2018 paper "An Approach for Schema Extraction of JSON and Extended JSON Document Collections".
 
-## Building the Docker image
-- Clone this repository
-  > git clone https://github.com/SaltyRain/repEng-JSONSchemaDiscovery.git
-- Build the Docker image from scratch
-  > cd repEng-JSONSchemaDiscovery
+## Prerequisites
 
-  > docker build -t repeng-jsonschemadiscovery .
+Ensure that `docker-compose` is installed and Docker is running on your local machine.
 
-  OR run the command without cache
-  > docker build --no-cache -t repeng-jsonschemadiscovery .
+You can verify this by executing:
+```
+docker-compose version
+```
+and
+```
+docker ps
+```
 
-## Running Docker container
-Access the container interactively with
-  > docker run -it repeng-jsonschemadiscovery
+## Build the Image and Run Containers
 
-## Running scripts
-Inside the docker container run the script to check, if software is installed
+First, navigate to the repository folder, open the terminal, and execute the following command:
 
-*NOTE:* You should be in folder home/repro to run this script (Use `ls` to check the current location)
+```
+docker-compose up -d
+```
 
-> ./smoke.sh
+This command pulls the required images and starts two containers in detached mode: `mongodb` for the database and `jsonschemadiscovery` for the JSONSchemaDiscovery tool.
 
+## Run the Experiment
 
-## Generating the paper
+After the containers are up and running, enter the `jsonschemadiscovery` container in interactive mode:
 
-Finally, we need to generate the paper.
+```
+docker exec -it jsonschemadiscovery /bin/bash
+```
 
-Enter the paper directory:
+Next, execute the following command:
 
-> cd paper
+```
+./doAll.sh
+```
 
-- Apply the `Makefile`:
+This script performs an initial smoke test to ensure the environment is set up correctly. It then runs a Python script that creates a user for API interaction, extracts data from .tar files, and inserts them into the database. Finally, it extracts the JSON schema, compares the reproduced results with the original paper's data, and generates a paper.pdf file containing the report of this reproduction package.
 
-> make
+## Copy and View the Resulting Paper
 
-Navigate to the output folder
+To copy the directory with the resulting paper, run the following command in another terminal from the folder where you want to save the results:
 
-> cd output
-> ls
+```
+docker cp jsonschemadiscovery:/home/repro/JSONSchemaDiscovery/rep-eng-paper .
+```
